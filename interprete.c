@@ -37,17 +37,13 @@ static void detruireSeq(sequence_t *seq)
     seq->tete = NULL;
 }
 
-// Cette fonction parcourt la liste crée.
 int interprete (sequence_t* seq, bool debug)
 {
     assert(seq != NULL);
 
     cellule_t *courante = seq->tete;
+    pile_t pile_calcul = { NULL };
 
-
-    // debug = true; /* À enlever par la suite et utiliser "-d" sur la ligne de commandes */
-
-    /* L'affichage est désactivé en mode silencieux */
     if (! silent_mode) {
         printf ("Programme:");
         afficher(seq);
@@ -55,28 +51,58 @@ int interprete (sequence_t* seq, bool debug)
         if (debug) stop();
     }
 
-
-    // À partir d'ici, beaucoup de choses à modifier dans la suite.
-
-    while (courante != NULL) { //à modifier: condition de boucle
+    while (courante != NULL) {
         int ret;
+        int a;
+        int b;
 
-        switch (courante->command) {
-            /* Ici on avance tout le temps, à compléter pour gérer d'autres commandes */
+        if (courante->type == TOKEN_NOMBRE) {
+            empiler(&pile_calcul, courante->value);
+        } else if (courante->type == TOKEN_OPERATEUR) {
+            if (!depiler(&pile_calcul, &b) ||
+                !depiler(&pile_calcul, &a)) {
+                eprintf("Pas assez de valeurs pour l'opérateur '%c'\n",
+                        courante->command);
+                detruirePile(&pile_calcul);
+                detruireSeq(seq);
+                return RATE;
+            }
+
+            switch (courante->command) {
+                case '+':
+                    empiler(&pile_calcul, a + b);
+                    break;
+                case '-':
+                    empiler(&pile_calcul, a - b);
+                    break;
+                case '*':
+                    empiler(&pile_calcul, a * b);
+                    break;
+                default:
+                    eprintf("Opérateur inconnu: '%c'\n",
+                            courante->command);
+                    detruirePile(&pile_calcul);
+                    detruireSeq(seq);
+                    return RATE;
+            }
+        } else {
+            switch (courante->command) {
 
             case 'A':
                 ret = avance();
                 if (ret == VICTOIRE)
                 {
+                    detruirePile(&pile_calcul);
                     detruireSeq(seq);
                     return VICTOIRE;
                 } /* on a atteint la cible */
                 if (ret == RATE)
                 {
+                    detruirePile(&pile_calcul);
                     detruireSeq(seq);
                     return RATE;
-                };     /* tombé dans l'eau ou sur un rocher */
-                break; /* à ne jamais oublier !!! */
+                }
+                break;
 
             case 'G':
                 gauche();
@@ -88,10 +114,12 @@ int interprete (sequence_t* seq, bool debug)
 
             default:
                 eprintf("Caractère inconnu: '%c'\n", courante->command);
+                detruirePile(&pile_calcul);
+                detruireSeq(seq);
                 return RATE;
+            }
         }
 
-        /* Affichage pour faciliter le debug */
         if (! silent_mode) {
             afficherCarte();
             printf ("Programme:");
@@ -103,8 +131,7 @@ int interprete (sequence_t* seq, bool debug)
         courante = courante->suivant;
     }
 
-    /* Si on sort de la boucle sans arriver sur la cible,
-     * c'est raté :-( */
+    detruirePile(&pile_calcul);
     detruireSeq(seq);
     return CIBLERATEE;
 }

@@ -27,13 +27,32 @@
 
 extern bool silent_mode;
 
+typedef enum {
+    TOKEN_NOMBRE,
+    TOKEN_COMMANDE,
+    TOKEN_OPERATEUR
+} type_token_t;
+
+
 struct cellule {
+    type_token_t type;
     char command;
     /* vous pouvez rajouter d'autres champs ici */
     int value;
     struct cellule *suivant;
 };
 typedef struct cellule cellule_t;
+
+struct cellule_pile {
+    int value;
+    struct cellule_pile *suivant;
+};
+typedef struct cellule_pile cellule_pile_t;
+
+struct pile {
+    cellule_pile_t *sommet;
+};
+typedef struct pile pile_t;
 
 struct sequence {
     cellule_t *tete;
@@ -48,11 +67,13 @@ void conversion (char *texte, sequence_t *seq);
 
 void afficher (sequence_t* seq);
 
-int est_vide(sequence_t* seq);
+bool pile_est_vide(const pile_t *pile);
 
-void empiler (sequence_t* seq, int value);
+void empiler (pile_t *pile, int value);
 
-int depiler(sequence_t *seq);
+bool depiler(pile_t *pile, int *value);
+
+void detruirePile(pile_t *pile);
 
 
 #endif

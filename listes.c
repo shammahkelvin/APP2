@@ -20,14 +20,16 @@ bool silent_mode = false;
 
 cellule_t* nouvelleCellule (void)
 {
-    /* À compléter (utiliser malloc) */
     cellule_t *cellule = malloc(sizeof(cellule_t));
 
     if (cellule == NULL) {
-        return NULL;
+        perror("malloc");
+        exit(EXIT_FAILURE);
     }
 
+    cellule->type = TOKEN_COMMANDE;
     cellule->command = '\0';
+    cellule->value = 0;
     cellule->suivant = NULL;
     return cellule;
 
@@ -50,22 +52,46 @@ void detruireCellule (cellule_t* cel)
 //Cet fonction parcourt le text
 void conversion (char *texte, sequence_t *seq)
 {
-  /* À compléter */
     cellule_t *precedente = NULL;
+    char *p = texte;
+
     assert(texte != NULL);
     assert(seq != NULL);
 
     seq->tete = NULL;
 
-    for (char *p = texte; *p != '\0'; p++)
-    {
-        if (*p != 'A' && *p != 'G' && *p != 'D')
-        {
-            /* les retours à la ligne et espaces presents dans le fichiers sont ignores. */
+    while (*p != '\0') {
+        cellule_t *nouv;
+
+        if (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t') {
+            p++;
             continue;
         }
-        cellule_t *nouv = nouvelleCellule();
-        nouv->command = *p;
+
+        nouv = nouvelleCellule();
+
+        if (*p >= '0' && *p <= '9') {
+            nouv->type = TOKEN_NOMBRE;
+            nouv->value = 0;
+
+            while (*p >= '0' && *p <= '9') {
+                nouv->value = nouv->value * 10 + (*p - '0');
+                p++;
+            }
+        } else if (*p == 'A' || *p == 'G' || *p == 'D') {
+            nouv->type = TOKEN_COMMANDE;
+            nouv->command = *p;
+            p++;
+        } else if (*p == '+' || *p == '-' || *p == '*') {
+            nouv->type = TOKEN_OPERATEUR;
+            nouv->command = *p;
+            p++;
+        } else {
+            eprintf("Caractère inconnu dans le programme: '%c'\n", *p);
+            detruireCellule(nouv);
+            p++;
+            continue;
+        }
 
         if (seq->tete == NULL)
         {
@@ -82,44 +108,70 @@ void conversion (char *texte, sequence_t *seq)
 void afficher (sequence_t* seq)
 {
     assert (seq); /* Le pointeur doit être valide */
-    /* À compléter */
     cellule_t *courante = seq->tete;
+
     while (courante != NULL)
     {
-        printf("%c", courante->command);
+        if (courante->type == TOKEN_NOMBRE) {
+            printf("%d", courante->value);
+        } else {
+            printf("%c", courante->command);
+        }
+
+        if (courante->suivant != NULL) {
+            printf(" ");
+        }
+
         courante = courante->suivant;
     }
 }
 
-int est_vide(sequence_t *seq)
+bool pile_est_vide(const pile_t *pile)
 {
-    return seq->tete == NULL;
+    assert(pile != NULL);
+    return pile->sommet == NULL;
 }
 
-void empiler (sequence_t* seq, int value)
+void empiler (pile_t *pile, int value)
 {
-    cellule_t *nouv = nouvelleCellule();
+    cellule_pile_t *nouvelle = malloc(sizeof(cellule_pile_t));
 
-    nouv->value = value;
-    nouv->suivant = seq->tete;
-    seq->tete = nouv;
-}
-
-int depiler(sequence_t *seq)
-{
-    cellule_t *courante;
-    int value;
-    if (est_vide(seq))
-    {
-       printf("La sequence est vide.\n");
-        return 0;
+    if (nouvelle == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
     }
 
-    courante = seq->tete;
-    value = courante->value;
-    seq->tete = courante->suivant;
-    detruireCellule(courante);
+    nouvelle->value = value;
+    nouvelle->suivant = pile->sommet;
+    pile->sommet = nouvelle;
+}
 
-    return value;
+bool depiler(pile_t *pile, int *value)
+{
+    cellule_pile_t *ancienne_tete;
 
+    assert(pile != NULL);
+    assert(value != NULL);
+
+    if (pile_est_vide(pile)) {
+        return false;
+    }
+
+    ancienne_tete = pile->sommet;
+    *value = ancienne_tete->value;
+    pile->sommet = ancienne_tete->suivant;
+
+    free(ancienne_tete);
+
+    return true;
+}
+
+void detruirePile(pile_t *pile)
+{
+    int value;
+
+    assert(pile != NULL);
+
+    while (depiler(pile, &value)) {
+    }
 }
