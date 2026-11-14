@@ -85,6 +85,32 @@ int interprete (sequence_t* seq, bool debug)
                     detruireSeq(seq);
                     return RATE;
             }
+        } else if (courante->type == TOKEN_MESURE) {
+            if (courante->has_argument) {
+                empiler(&pile_calcul, mesure(courante->value));
+            } else {
+                if (!depiler(&pile_calcul, &a)) {
+                    eprintf("Pas assez de valeurs pour mesurer\n");
+                    detruirePile(&pile_calcul);
+                    detruireSeq(seq);
+                    return RATE;
+                }
+
+                empiler(&pile_calcul, mesure(a));
+            }
+        } else if (courante->type == TOKEN_POSE) {
+            if (courante->has_argument) {
+                pose(courante->value);
+            } else {
+                if (!depiler(&pile_calcul, &a)) {
+                    eprintf("Pas assez de valeurs pour poser une marque\n");
+                    detruirePile(&pile_calcul);
+                    detruireSeq(seq);
+                    return RATE;
+                }
+
+                pose(a);
+            }
         } else {
             switch (courante->command) {
 

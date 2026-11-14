@@ -30,6 +30,7 @@ cellule_t* nouvelleCellule (void)
     cellule->type = TOKEN_COMMANDE;
     cellule->command = '\0';
     cellule->value = 0;
+    cellule->has_argument = false;
     cellule->suivant = NULL;
     return cellule;
 
@@ -71,12 +72,28 @@ void conversion (char *texte, sequence_t *seq)
         nouv = nouvelleCellule();
 
         if (*p >= '0' && *p <= '9') {
-            nouv->type = TOKEN_NOMBRE;
-            nouv->value = 0;
+            int nombre = 0;
 
             while (*p >= '0' && *p <= '9') {
-                nouv->value = nouv->value * 10 + (*p - '0');
+                nombre = nombre * 10 + (*p - '0');
                 p++;
+            }
+
+            if (*p == 'M') {
+                nouv->type = TOKEN_MESURE;
+                nouv->command = 'M';
+                nouv->value = nombre;
+                nouv->has_argument = true;
+                p++;
+            } else if (*p == 'P') {
+                nouv->type = TOKEN_POSE;
+                nouv->command = 'P';
+                nouv->value = nombre;
+                nouv->has_argument = true;
+                p++;
+            } else {
+                nouv->type = TOKEN_NOMBRE;
+                nouv->value = nombre;
             }
         } else if (*p == 'A' || *p == 'G' || *p == 'D') {
             nouv->type = TOKEN_COMMANDE;
@@ -85,6 +102,14 @@ void conversion (char *texte, sequence_t *seq)
         } else if (*p == '+' || *p == '-' || *p == '*') {
             nouv->type = TOKEN_OPERATEUR;
             nouv->command = *p;
+            p++;
+        } else if (*p == 'M') {
+            nouv->type = TOKEN_MESURE;
+            nouv->command = 'M';
+            p++;
+        } else if (*p == 'P') {
+            nouv->type = TOKEN_POSE;
+            nouv->command = 'P';
             p++;
         } else {
             eprintf("Caractère inconnu dans le programme: '%c'\n", *p);

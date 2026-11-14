@@ -30,15 +30,17 @@ extern bool silent_mode;
 typedef enum {
     TOKEN_NOMBRE,
     TOKEN_COMMANDE,
-    TOKEN_OPERATEUR
+    TOKEN_OPERATEUR,
+    TOKEN_MESURE,
+    TOKEN_POSE
 } type_token_t;
 
 
 struct cellule {
     type_token_t type;
     char command;
-    /* vous pouvez rajouter d'autres champs ici */
     int value;
+    bool has_argument;
     struct cellule *suivant;
 };
 typedef struct cellule cellule_t;
